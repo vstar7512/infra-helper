@@ -3,9 +3,10 @@ set -euo pipefail
 
 STACK_DIR=${1:-}
 ACTION=${2:-}
+STATE_KEY=${3:-}
 
-if [[ -z "$ACTION" || -z "$STACK_DIR" ]]; then
-  echo "Usage: $0 <stack dir path> <init|validate|plan|apply|refresh|output|destroy>"
+if [[ -z "$STACK_DIR" || -z "$ACTION" ]]; then
+  echo "Usage: $0 <stack dir path> <init|validate|plan|apply|refresh|output|destroy> <state key>"
   exit 1
 fi
 
@@ -21,12 +22,10 @@ case "$ACTION" in
   init)
     : "${tfstate_s3_bucket_name:?must be set}"
     : "${tflock_dynamodb_table_name:?must be set}"
-    : "${env_type:?must be set}"
-    : "${main_tag:?must be set}"
     : "${aws_region:?must be set}"
     terraform init -reconfigure \
       -backend-config="bucket=${tfstate_s3_bucket_name}" \
-      -backend-config="key=${env_type}-${main_tag}/${STACK_DIR%/}/terraform.tfstate" \
+      -backend-config="key=${STATE_KEY%/}" \
       -backend-config="region=${aws_region}" \
       -backend-config="dynamodb_table=${tflock_dynamodb_table_name}" \
       -backend-config="encrypt=true" \
